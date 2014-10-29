@@ -1,0 +1,116 @@
+<#
+.Synopsis
+   This function uses the standard Microsoft.Web.XmlTransform.dll to transform .net config files, as such it requires the dll to be installed and the path to the file.
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Transform-Config -File "web.base.config" -Transform "web.release.config" -Output "web.config" -DllPath "C:\Microsoft.Web.XmlTransform.dll"
+#>
+function Transform-Config
+{
+    [CmdletBinding()]
+    [OutputType([int])]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$false,
+                   Position=0)]
+        [string]$File,
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$false,
+                   Position=1)]
+        [string]$Transform,
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$false,
+                   Position=2)]
+        [string]$Output,
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$false,
+                   Position=3)]
+        [string]$DllPath
+    )
+
+    Begin
+    { 
+
+        $src = $File
+        $xdt = $Transform
+        $dst = $Output
+
+        $workingPath = Resolve-Path -Path . 
+        $scriptPath = (Split-Path -Parent  $MyInvocation.MyCommand.Module.Path)
+        Write-Verbose $scriptPath
+        
+        #Load the XML transform DLL
+        if([System.String]::IsNullOrWhiteSpace($DllPath))
+        {
+            if(!(Test-Path -Path "c:\Program Files (x86)\MSBuild\Microsoft\VisualStudio\v11.0\Web\Microsoft.Web.XmlTransform.dll"))
+            {
+                if(!(Test-Path -Path (Join-Path -Path $scriptPath -ChildPath "Microsoft.Web.XmlTransform.dll")))
+                {
+                    Write-Error "Unable to load Microsoft.Web.XmlTransform.dll"
+                }
+                else
+                {
+                    Add-Type -Path (Join-Path -Path $scriptPath -ChildPath "Microsoft.Web.XmlTransform.dll")
+                }
+            }
+            else
+            {
+                Add-Type -Path "c:\Program Files (x86)\MSBuild\Microsoft\VisualStudio\v11.0\Web\Microsoft.Web.XmlTransform.dll"
+            }
+        }
+        else
+        {
+            Add-Type -Path $DllPath
+        }
+        
+        if(!(Test-Path -Path $File))
+        {
+           $src= (Join-Path -Path $workingPath -ChildPath $File)
+        }
+
+        if(!(Test-Path -Path $Transform))
+        {
+           $xdt= (Join-Path -Path $workingPath -ChildPath $Transform) 
+        }
+
+        if(!(Test-Path -Path $Output))
+        {
+           $dst= (Join-Path -Path $workingPath -ChildPath $Output)
+        }
+
+
+    }
+    Process
+    {
+        try 
+        {
+            $doc = New-Object Microsoft.Web.XmlTransform.XmlTransformableDocument
+            $doc.PreserveWhiteSpace = $true
+            $doc.Load($src)
+
+            $trn = New-Object Microsoft.Web.XmlTransform.XmlTransformation($xdt)
+
+            if ($trn.Apply($doc))
+            {
+                $doc.Save($dst)
+                Write-Output "Output file: $dst"
+            }
+            else
+            {
+                throw "Transformation terminated with status False"
+            }
+        }
+        catch
+        {
+            Write-Output $Error[0].Exception
+        } 
+    }
+    End
+    {
+    }
+}
