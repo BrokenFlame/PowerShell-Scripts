@@ -1,0 +1,66 @@
+function Set-WindowsUpdate
+{
+
+	param
+	(
+
+		[Parameter(Mandatory=$false)]
+		[int] $NotificationLevel = -1,
+
+		[Parameter(Mandatory=$false)]
+		[int] $InstallationDay = -1,
+
+		[Parameter(Mandatory=$false)]
+		[int] $InstallationHour = -1,
+
+		[Parameter(Mandatory=$false)]
+		[bool] $RecommendedUpdates = $false
+
+	)
+
+	# see http://msdn.microsoft.com/en-us/library/windows/desktop/aa385806%28v=vs.85%29.aspx
+	$aunlNotConfigured            = 0; # "Not configured"
+	$aunlDisabled                 = 1; # "Never check for updates"
+	$aunlNotifyBeforeDownload     = 2; # "Check for updates but let me choose whether to download and install them"
+	$aunlNotifyBeforeInstallation = 3; # "Download updates but let me choose whether to install them"
+	$aunlScheduledInstallation    = 4; # "Install updates automatically"
+
+	# see http://msdn.microsoft.com/en-us/library/windows/desktop/aa385811%28v=vs.85%29.aspx
+	$ausidEveryDay       = 0; # "Every day"
+	$ausidEverySunday    = 1; # "Every Sunday"
+	$ausidEveryMonday    = 2; # "Every Monday"
+	$ausidEveryTuesday   = 3; # "Every Tuesday"
+	$ausidEveryWednesday = 4; # "Every Wednesday"
+	$ausidEveryThursday  = 5; # "Every Thursday"
+	$ausidEveryFriday    = 6; # "Every Friday"
+	$ausidEverySaturday  = 7; # "Every Saturday"
+
+	$autoupdate = new-object -com "Microsoft.Update.AutoUpdate";
+	$settings   = $autoupdate.Settings;
+
+	if( $NotificationLevel -gt -1 )
+	{
+		# see http://msdn.microsoft.com/en-us/library/windows/desktop/aa385824%28v=vs.85%29.aspx
+		$settings.NotificationLevel = $NotificationLevel;
+	}
+
+	if( $InstallationDay -gt -1 )
+	{
+		# see http://msdn.microsoft.com/en-us/library/windows/desktop/aa385830%28v=vs.85%29.aspx
+		$settings.ScheduledInstallationDay = $InstallationDay;
+	}
+
+	if( $InstallationHour -gt -1 )
+	{
+		# see http://msdn.microsoft.com/en-us/library/windows/desktop/aa385831%28v=vs.85%29.aspx
+		$settings.ScheduledInstallationTime = $InstallationHour;
+	}
+
+	if( $RecommendedUpdates )
+	{
+		$settings.IncludeRecommendedUpdates = $RecommendedUpdates;
+	}
+
+	$settings.Save();
+
+}
