@@ -1,0 +1,88 @@
+<#
+.Synopsis
+   Download and install the Octopus Tentacle
+.DESCRIPTION
+   Downloads the Octopus Deploy Tentacle from OctopusDeploy.com and installs the Tentacle with the settings provided.
+.EXAMPLE
+   Install-OctopusDeployClient -InstallPath "X:\Octopus" -Environment Staging -Role WebServer  -OctopusServerUrl https://octopus.mycompany.com -APIKey API-1231234234234 -Version 2.6.4.951 -x64
+.EXAMPLE
+#>
+function Install-OctopusDeployClient 
+{
+    [CmdletBinding()]
+    [OutputType([int])]
+    Param
+    (
+        [string]$InstallPath = "X:\Octopus",
+        [Parameter(Mandatory=$true)]
+        [string]$Environment,
+        [Parameter(Mandatory=$true)]
+        [string]$Role,
+        [string]$OctopusServerUrl = "https://octopus.mycompany.com", 
+        [string]$APIKey = "API-13124234354234234",
+        [System.Version]$Version,
+        [switch]$x64
+    )
+
+    Begin
+    {
+        [string]$strX64 = ""
+        if($x64)
+        {
+            $strX64 = "-x64"
+        }
+        $strTentacleUrl = "https://download.octopusdeploy.com/octopus/Octopus.Tentacle.$Version$strX64.msi"
+        $strDownloadPath = "$($env:TEMP)\Octopus.Tentacle.$Version$strX64.msi"
+
+        $strInstallCmd = "msiexec.exe INSTALLLOCATION=$InstallPath /i $strDownloadPath /qn"
+
+        $securityHeader =  @{"X-Octopus-ApiKey"= "$APIKey"}
+        $EnvironmentData = Invoke-RestMethod -Method Get -Uri $OctopusServerUrl/api/environments/all -Headers $securityHeader
+        if(($EnvironmentData | Where {$_.Name -eq "Production"}) -eq $null)
+        {
+            Write-Error "The Environment specified is not available at the Octopus Server."
+        }
+        
+
+    }
+    Process
+    {
+        Write-Verbose -Message "Downloading Octopus Deploy Tentacle..."
+        try
+        {
+            (new-object System.Net.WebClient).Downloadfile("$strTentacleUrl", "$strDownloadPath")
+            Write-Verbose -Message "Downloading completed."
+
+            Write-Verbose -Message "Installing Octopus Deploy Tenticle."
+            Write-Host "Executing $strInstallCmd."
+            Invoke-Expression -Command $strInstallCmd | Out-Null
+            Write-Verbose -Message "Finished installing Octopus Deploy Tenticle."
+            
+            $service = Get-Service | Where {$_.Name -eq "OctopusDeploy Tentacle"}
+            if($service -eq $null)
+            {
+                Write-Error -Message "Failed to install the Octopus Tentacle."
+            }
+            else
+            {
+                Write-Verbose -Message "The Octopus Tentacle has been installed."
+            }
+
+            Write-Verbose -Message "Configuring the Octopus Deploy Tentacle."
+            Invoke-Expression -Command "$InstallPath\Tentacle.exe create-instance --instance `"Tentacle`" --config `"$InstallPath\Tentacle\Tentacle.config`" --console"
+            Invoke-Expression -Command "$InstallPath\Tentacle.exe new-certificate --instance `"Tentacle`" --console"
+            Invoke-Expression -Command "$InstallPath\Tentacle.exe configure --instance `"Tentacle`" --home `"$InstallPaths`" --console"
+            Invoke-Expression -Command "$InstallPath\Tentacle.exe configure --instance `"Tentacle`" --app `"$InstallPath\Applications`" --console"
+            Invoke-Expression -Command "$InstallPath\Tentacle.exe register-with --instance `"Tentacle`" --server `"$OctopusServerUrl`" --environment `"$($Environment)`" --role `"$($Role)`" --apiKey `"$($APIKey)`" --comms-style TentacleActive --force --console"
+            Invoke-Expression -Command "$InstallPath\Tentacle.exe service --instance `"Tentacle`" --install --start --console"
+            Write-Verbose -Message "The Octopus Deploy Tentacle has been configured."
+        }
+        catch
+        {
+            
+        }
+    }
+    End
+    {
+    }
+}
