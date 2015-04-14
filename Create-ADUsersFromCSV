@@ -1,0 +1,26 @@
+#This script is not finished. You can use Nortons API to generate Passwords but please note that they will rate limit you after 25 users per 10 minute slot.
+
+$accounts = Import-Csv -Header "SAM", "Firstname", "Surname", "Email", "Password" -Path c:\Users\tthambi-acs\Desktop\Users.csv
+$users = New-Object -TypeName System.Collections.ArrayList
+$users.Clear()
+[int]$row = 0
+for ($i = 0; $i -lt $accounts.Count; $i++)
+{ 
+    $user = New-Object -TypeName System.Management.Automation.PSObject
+    $user | Add-Member -MemberType NoteProperty -Name "SAMSAccount" -Value "$($accounts[$i].SAM)"
+    $user | Add-Member -MemberType NoteProperty -Name "Name" -Value "$($accounts[$i].Firstname)"
+    $user | Add-Member -MemberType NoteProperty -Name "Surname" -Value "$($accounts[$i].Surname)"
+    $user | Add-Member -MemberType NoteProperty -Name "Email" -Value "$($accounts[$i].Email)"
+    $user | Add-Member -MemberType NoteProperty -Name "Password" -Value "$($accounts[$i].Password)"
+   # $user | Add-Member -MemberType NoteProperty -Name "Password" -Value "$((Invoke-RestMethod -Uri "https://identitysafe.norton.com/password?&include_phonetic=false&include_numbers=true&include_letters=true&include_mixedcase=true&include_punctuation=true&no_similar=true&num_passwords=1&password_length=14").passwords.value)"
+    $users.Add($user)
+}
+
+
+$users | Export-Csv -Path c:\Users\tthambi-acs\Desktop\UsersWithPasswords.csv
+
+foreach($currentUser in $users)
+{
+    [string]$displayName = "$($currentUser.Name) $($currentUser.Surname)"
+    New-ADUser -Path "OU=Users,DC=domain,DC=local" -Company MyCompany -DisplayName $displayName -SamAccountName $($currentUser.SAMSAccount) -Name $($currentUser.SAMSAccount) -GivenName $($currentUser.Name) -Surname $($currentUser.Surname) -EmailAddress $($currentUser.Email)  -ChangePasswordAtLogon $false -AccountPassword (ConvertTo-SecureString -AsPlainText $($currentUser.Password) -Force) -Enabled $true -UserPrincipalName "$($currentUser.SAMSAccount)@domain.local"
+}
