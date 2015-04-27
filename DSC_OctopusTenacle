@@ -1,0 +1,49 @@
+Configuration OctopusWorkerTentacle
+{
+ param([string[]]$NodeName=“localhost“, [pscredential]$Credentials)
+
+   
+    Node $NodeName
+    {
+        Package SevenZip
+        {
+            Ensure =“Present”  # You can also set Ensure to “Absent”
+            Path  ="http://www.7-zip.org/a/7z920-x64.msi”
+            Name = “7-Zip 9.20 (x64 edition)”
+            ProductId = “23170F69-40C1-2702-0920-000001000000"
+        }
+
+        
+        Script OctopusDeployTentacleDownload
+        {
+            GetScript = {
+                $Result = (Test-Path -Path `"$Env:TEMP\Octopus.Tentacle.2.6.4.951-x64.msi`")
+                @{GetScript = $GetScript; 
+                    SetScript = $SetScript; 
+                    TestScript = $TestScript; 
+                    Result = $Result }
+            }
+            
+            SetScript =  "(new-object System.Net.WebClient).Downloadfile(`"https://download.octopusdeploy.com/octopus/Octopus.Tentacle.2.6.4.951-x64.msi`", `"$Env:TEMP\Octopus.Tentacle.2.6.4.951-x64.msi`")"
+            
+            TestScript = "return (Test-Path -Path `"$Env:TEMP\Octopus.Tentacle.2.6.4.951-x64.msi`")"
+        }
+
+        Package OctopusDeployTentacle
+        {
+            Ensure =“Present”  # You can also set Ensure to “Absent”
+            Path  =“$Env:TEMP\Octopus.Tentacle.2.6.4.951-x64.msi”
+            Name = “Octopus Deploy Tentacle”
+            ProductId = “46329534-FA75-4B45-9B71-8758FB4B5B3E"
+            DependsOn = “[Script]OctopusDeployTentacleDownload”
+        }
+
+        Package MicrosoftAzurePowershell
+        {
+            Ensure =“Present”
+            Path  = "http://az412849.vo.msecnd.net/downloads04/azure-powershell.0.8.16.msi"
+            Name = “Microsoft Azure PowerShell - March 2015”
+            ProductId = “F6A0D4A7-1B7A-4860-AC85-57A56A63B530"
+        }
+    }
+}
