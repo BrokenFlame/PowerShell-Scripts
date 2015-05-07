@@ -1,0 +1,46 @@
+<#
+.Synopsis
+   Removes XML Elements from an XML Document
+.DESCRIPTION
+   Using XPath you can delete Elements and off of thier child elements from an XML Document such as .net config files
+.EXAMPLE
+   Remove-XmlElement -Path C:\Application\Web.config -XmlElementsPath "//Configuration/ConnectionString", //Configuration/AppSettings
+.EXAMPLE
+   Remove-XmlElement -Path C:\Application\Web.config -XmlElementsPath "//Configuration/ConnectionString"
+#>
+function Remove-XmlElement
+{
+    [CmdletBinding()]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [string]$Path, 
+        [string[]]$XmlElementsPath
+    )
+
+    Begin
+    {
+        if(!(Test-Path -Path $file))
+        {
+            Write-Error "The file '$file' does not exists."
+        }
+        [System.Xml.XmlDocument]$file = Get-Content -Path $Path -Encoding UTF8
+    }
+    Process
+    {
+        
+        foreach($xmlElementPath in $XmlElementsPath.GetEnumerator())
+        {
+            [System.Xml.XmlNode]$node = $file.SelectSingleNode($xmlElementPath)
+            $node.ParentNode.RemoveChild($node)
+        }
+        $file.Save($Path)
+    }
+    End
+    {
+        
+    }
+}
