@@ -15,7 +15,7 @@
            [Parameter(Mandatory=$true,
                       ValueFromPipelineByPropertyName=$true,
                       Position=0)]
-            [string]$ServerUrl ="https://teamcity.worldremit.com",
+            [string]$ServerUrl ="https://mycompany.worldremit.com",
             [string]$Username,
             [string]$Password,
             [string]$FileName = "TeamCity_Backup_" + (Get-Date -format "yyyyMMdd"),
