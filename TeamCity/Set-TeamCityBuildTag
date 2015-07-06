@@ -1,0 +1,47 @@
+
+
+<#
+.Synopsis
+   Tags a build
+.DESCRIPTION
+   Adds a tag to a build, if the tag already exists no action will be taken.
+.EXAMPLE
+   Set-TeamCityBuildTag -BaseUrl https://teamcity.mycompany.com -BuildConfiguatrionName My_Teamcity_Build_Configuration -VersionNumber 1.0.0.0 -Username Player1 -Password MyPassword -Tag "MyOneWordTag"
+#>
+function Set-TeamCityBuildTag
+{
+    [CmdletBinding()]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [string]$BaseUrl = "https://teamcity.mycompany.com",
+        [string]$BuildConfiguatrionName,
+        [string]$VersionNumber,
+        [string]$Username,
+        [string]$Password,
+        [string]$Tag
+    )
+
+    Begin
+    {
+        $objSecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+        [PSCredential]$Cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Username, $objSecurePassword
+
+        [string]$url = "$BaseUrl/httpAuth/app/rest"
+    }
+    Process
+    {
+        $result = Invoke-RestMethod -Method Get -Uri "$url/builds/?locator=buildType:$BuildConfiguatrionName,branch:default:any,number:$VersionNumber" -Credential $Cred
+        
+        $buildId = $result.builds.build.id
+        Write-Host "Build Id: $buildId."
+
+        Invoke-RestMethod -Method POST -Uri "$url/builds/id:$buildId/tags" -Credential $Cred -Body $Tag -ContentType "text/plain" | Out-Null
+    }
+    End
+    {
+    }
+}
