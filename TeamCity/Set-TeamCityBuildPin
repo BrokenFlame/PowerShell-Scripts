@@ -1,0 +1,69 @@
+
+
+<#
+.Synopsis
+   Pins or removes the pin on a TeamCity Build
+.DESCRIPTION
+   Pins or removes the pin on a TeamCity Build. You may repin a build without removing the pin to update a comment.
+.EXAMPLE
+   Set-TeamCityBuildPin -BaseUrl https://teamcity.mycompany.com -BuildConfiguatrionName My_Teamcity_Build_Configuration -VersionNumber 1.0.0.1625 -Username Player1 -Password MyPassword -Comment "My useful comment"
+.EXAMPLE
+   Set-TeamCityBuildPin -BaseUrl https://teamcity.mycompany.com -BuildConfiguatrionName My_Teamcity_Build_Configuration -VersionNumber 1.0.0.1625 -Username Player1 -Password MyPassword -Comment "My useful comment" -Unpin
+#>
+function Set-TeamCityBuildPin
+{
+    [CmdletBinding()]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [string]$BaseUrl = "https://teamcity.mycompany.com",
+        [string]$BuildConfiguatrionName,
+        [string]$VersionNumber,
+        [string]$Username,
+        [string]$Password,
+        [string]$Comment,
+        [switch]$Unpin
+        
+    )
+
+    Begin
+    {
+        $objSecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+        [PSCredential]$Cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Username, $objSecurePassword
+
+        [string]$url = "$BaseUrl/httpAuth/app/rest"
+    }
+    Process
+    {
+        Write-Host "$url/builds/?locator=buildType:$BuildConfiguatrionName,branch:default:any,number:$VersionNumber"
+        #Get 
+        $result = Invoke-RestMethod -Method Get -Uri "$url/builds/?locator=buildType:$BuildConfiguatrionName,branch:default:any,number:$VersionNumber" -Credential $Cred
+        
+        $buildId = $result.builds.build.id
+        Write-Host "Build Id: $buildId."
+
+        $isPinned = Invoke-RestMethod -Method Get -Uri "$url/builds/?locator=buildType:$BuildConfiguatrionName,branch:default:any,number:$VersionNumber/pin" -Credential $Cred
+
+        if($Unpin)
+        {
+            Invoke-RestMethod -Method Delete -Uri "$url/builds/id:$buildId/pin" -Credential $Cred -Body $Comment -ContentType "text/plain"
+        }
+        else
+        {
+            Invoke-RestMethod -Method Put -Uri "$url/builds/id:$buildId/pin" -Credential $Cred -Body $Comment -ContentType "text/plain"
+        }
+        
+    }
+    End
+    {
+    }
+}
+
+
+
+
+
+
