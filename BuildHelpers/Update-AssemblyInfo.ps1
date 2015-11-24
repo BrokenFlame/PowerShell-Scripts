@@ -38,7 +38,7 @@ function Update-AssemblyInfo
             {
                 Write-Debug "Searching for single file."
                 $files = Get-Item -Path $Path
-                $colAssemblyInfos.Add($file)                
+                $colAssemblyInfos.Add($files) | Out-Null               
             }
         }
         else
@@ -66,10 +66,16 @@ function Update-AssemblyInfo
         {
             Write-Host "Rewriting $($file.FullName)."
             $file.IsReadOnly = $false
-            $content = Get-Content -Path $file.FullName -Encoding UTF8
-            $content = [System.Text.RegularExpressions.Regex]::Replace($content, $assemblyVersionPattern, $assemblyVersion)
-            $content = [System.Text.RegularExpressions.Regex]::Replace($content, $fileVersionPattern, $fileVersion)
-            Set-Content -Path $file.FullName -Value $content -Encoding UTF8
+            $content = Get-Content -Path $file.FullName
+            $stringBuilder = New-Object -TypeName System.Text.StringBuilder
+            foreach($line in $content)
+            {
+                $newLineContent = [System.Text.RegularExpressions.Regex]::Replace($line, $assemblyVersionPattern, $assemblyVersion)
+                $newLineContent = [System.Text.RegularExpressions.Regex]::Replace($newLineContent, $fileVersionPattern, $fileVersion)
+                #Write-Host $newLineContent
+                $stringBuilder.AppendLine($newLineContent) | Out-Null
+            }
+            Set-Content -Path $file.FullName -Value $stringBuilder.ToString()
         }
     }
     End
