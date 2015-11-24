@@ -66,10 +66,10 @@ function Update-AssemblyInfo
         {
             Write-Host "Rewriting $($file.FullName)."
             $file.IsReadOnly = $false
-            $content = Get-Content -Path $file.FullName
+            $content = Get-Content -Path $file.FullName -Encoding UTF8
             $content = [System.Text.RegularExpressions.Regex]::Replace($content, $assemblyVersionPattern, $assemblyVersion)
             $content = [System.Text.RegularExpressions.Regex]::Replace($content, $fileVersionPattern, $fileVersion)
-            Set-Content -Path $file.FullName -Value $content
+            Set-Content -Path $file.FullName -Value $content -Encoding UTF8
         }
     }
     End
