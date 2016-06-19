@@ -1,3 +1,156 @@
+function New-RabbitMQUser
+{
+    [CmdletBinding()]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        $Server,
+        [ValidateNotNull()]
+        [string]$NewUser,
+        [string]$NewUserPassword,
+        [string]$NewUserTag,
+
+        [ValidateNotNull()]
+        [string]$Username,
+        [ValidateNotNull()]
+        [string]$Password
+    )
+
+    Begin
+    {
+        $securePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+        $credential = New-Object System.Management.Automation.PSCredential -ArgumentList $Username, $securePassword
+
+        $uri = "$Server/api/users"
+        $usersUrl = "$Server/api/users/$NewUser"
+
+        #$tags = $null
+        #foreach($tags in $NewUserTag.Split(" "))
+        #{
+            
+        #}
+
+        $configuration = @{"password" = "$null"} | ConvertTo-Json
+
+        if(!([System.String]::IsNullOrWhiteSpace($NewUserPassword)))
+        {
+            $configuration = @{"password" = "$NewUserPassword"; "tags" = "$NewUserTag"} | ConvertTo-Json
+        }
+        
+    }
+    Process
+    {
+        $users = Invoke-RestMethod -Method Get -Uri $uri -Credential $credential | Where { $_.users -eq "$NewUser"  }
+
+        If($users -eq $null)
+        {
+            Invoke-RestMethod -Method Put -Uri "$usersUrl" -Credential $credential -ContentType "application/json" -Body $configuration
+        }
+    }
+    End
+    {
+    }
+}
+
+function Set-RabbitMQUserPermission
+{
+    [CmdletBinding()]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [string]$Server,
+        [string]$Vhost = "%2F",
+        [ValidateNotNull()]
+        [string]$RabbitMQUser,
+        [ValidateNotNull()]
+        [string]$Configure,
+        [ValidateNotNull()]
+        [string]$Write,
+        [ValidateNotNull()]
+        [string]$Read,
+
+        [ValidateNotNull()]
+        [string]$Username,
+        [ValidateNotNull()]
+        [string]$Password
+    )
+
+    Begin
+    {
+        if([System.String]::IsNullOrWhiteSpace($Vhost))
+        {
+            $Vhost = "%2F"
+        }
+
+        $securePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+        $credential = New-Object System.Management.Automation.PSCredential -ArgumentList $Username, $securePassword
+
+        $uri = "$Server/api/users/$RabbitMQUser"
+        $usersPermissionsUrl = "$Server/api/permissions/$Vhost/$RabbitMQUser"
+        $configuration =  @{"configure" = "$Configure"; "write" = "$Write"; "read" = "$Read" } | ConvertTo-Json
+    }
+    Process
+    {
+        $user = Invoke-RestMethod -Method Get -Uri $uri -Credential $credential | Where { $_.users -eq "$RabbitMQUser"  }
+
+        If($users -ne $null)
+        {
+            Invoke-RestMethod -Method Put -Uri "$usersPermissionsUrl" -Credential $credential -ContentType "application/json" -Body $configuration
+        }
+    }
+    End
+    {
+    }
+}
+
+function Remove-RabbitMQUser
+{
+    [CmdletBinding()]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        $Server,
+        [ValidateNotNull()]
+        [string]$RabbitMQUser,
+
+        [ValidateNotNull()]
+        [string]$Username,
+        [ValidateNotNull()]
+        [string]$Password
+    )
+
+    Begin
+    {
+        $securePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+        $credential = New-Object System.Management.Automation.PSCredential -ArgumentList $Username, $securePassword
+
+        $uri = "$Server/api/users"
+        $usersUrl = "$Server/api/users/$RabbitMQUser"
+        
+    }
+    Process
+    {
+        $users = Invoke-RestMethod -Method Get -Uri $uri -Credential $credential | Where { $_.users -eq "$RabbitMQUser"  }
+
+        If($users -eq $null)
+        {
+            Invoke-RestMethod -Method Delete -Uri "$usersUrl" -Credential $credential -ContentType "application/json"
+        }
+    }
+    End
+    {
+    }
+}
+
 <#
 .Synopsis
    Creates exchange for RabbitMQ 
