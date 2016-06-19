@@ -1,0 +1,13 @@
+#DRAFT FILE, will be converted to DSC
+
+https://www.rabbitmq.com/releases/rabbitmq-server/v3.6.2/rabbitmq-server-3.6.2.exe
+http://erlang.org/download/otp_win64_18.3.exe
+
+Unblock-File -Path C:\downloads\otp_win64_18.3.exe
+Unblock-File -Path C:\downloads\rabbitmq-server-3.6.2.exe
+
+Invoke-Expression -Command "C:\downloads\otp_win64_18.3.exe /S"
+Invoke-Expression -Command "C:\downloads\rabbitmq-server-3.6.2.exe /S"
+
+Invoke-Expression -Command "C:\Program Files\RabbitMQ Server\rabbitmq_server-3.6.2\sbin\rabbitmq-plugins enable rabbitmq_management"
+Invoke-Expression -Command "C:\Program Files\RabbitMQ Server\rabbitmq_server-3.6.2\sbin\rabbitmqctl restart"
