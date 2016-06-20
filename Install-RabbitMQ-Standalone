@@ -57,7 +57,7 @@ Configuration RabbitMQServer
 RabbitMQServer
 Start-DscConfiguration RabbitMQServer localhost -Wait -Force
 
-#notes: Computer needs to restart to set System Variables, for Erlang before restarting enabling the control panel and restarting RabbitMQ
+# notes: Erlang needs sets the ERLANG_HOME system environment variable which requires a restart to take effect.
 # Restart-Computer -Force
 # CD "$env:ProgramFiles\RabbitMQ Server\rabbitmq_server-3.6.2\sbin"
 # Invoke-Expression -Command "rabbitmq-plugins enable rabbitmq_management"
