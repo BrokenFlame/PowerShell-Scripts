@@ -1,0 +1,99 @@
+function Ensure-OcotopusEnvironment
+{
+    [CmdletBinding()]
+    [OutputType([int])]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [string]$Server,
+        [string]$ApiKey = "API-DSFSOOHFTSYAWCSZNA5ISONQJK",
+        [string]$Name,
+        [string]$Description,
+        [int]$SortOrder = 0,
+        [switch]$UseGuidedFailure
+
+    )
+
+    Begin
+    {
+        $header = @{ "X-Octopus-ApiKey" = $ApiKey}
+        $environmentsUri = "$Server/api/environments"
+        $allEnvironmentsUri = "$Server/api/environments/all"
+
+        $mEnvironment = @{ "Name" = $Name;"Description" = $Description;"SortOrder" = $SortOrder;"UseGuidedFalure" = $UseGuidedFailure} | ConvertTo-Json
+
+    }
+    Process
+    {
+        #Get information to configure environments
+        $environmentSettings = Invoke-RestMethod -Method Get $environmentsUri -Headers $header
+        $environmentsPerPage = $environmentSettings.ItemsPerPage
+        $environmentsCount = $environmentSettings.TotalResults
+        Write-Debug -Message "Environments per page = $envionrmentsPerPage, Number of environments = $environmentsCount"
+        
+        #if there are not any environments just create the one requested
+        if($environmentsCount -le 0)
+        {
+            Write-Debug -Message "No environments found create new environments [$Name]."
+            Invoke-RestMethod -Method Post -Uri $environmentsUri -Headers $header -ContentType "application/json" -Body $mEnvironment
+        }
+        #check if the environment exists update it else create a new environment
+        else
+        {
+            Write-Debug -Message "Checking current environments list, to see if [$Name] already exists."
+            #setup pagnation and check if envionment already exists
+            [int]$pages = $environmentsCount / $environmentsPerPage 
+            [int]$remainingItems = $environmentsCount % $environmentsPerPage
+            Write-Debug "Remainders = $remainingItems"
+            [int]$totalpages = $null 
+            [int]$envionrmentsPerPage =0
+
+            if($remainingItems -eq 0)
+            {
+                $totalpages = $pages
+                Write-Debug -Message "Number of full pages to check $totalpages"
+            }
+            else
+            {
+                $totalpages = $pages + 1
+                Write-Debug -Message "Number of pages to check $totalpages"
+            }
+
+            [bool]$environmetExists = $false
+            [string]$matchedEnvironmentId = ""
+            #for ($i = 0; $i -lt $totalpages; $i++)
+            #{
+            #pagination disabled
+                #Write-Debug "Requesting environments list page [$i] of [$totalpages]"
+                $currentSet = $null
+                Write-Debug "Requesting environments list."
+                $currentSet = ((Invoke-RestMethod -Method Get $Server/api/environments/all -Headers $header) | Where {$_.Name -eq "$Name"})
+                if($currentSet -ne $null)
+                {
+                    $environmetExists = $true
+                    $matchedEnvironmentId = $currentSet.Id
+                    Write-Debug "Found the environment [$Name] using the Id [$matchedEnvironmentId]."
+                }
+            #}
+           
+            #update or create environment
+            if($environmetExists -eq $true)
+            {
+                Write-Debug -Message "Updaing the environment [$Name]."
+                Invoke-RestMethod -Method Put -Uri "$environmentsUri/$matchedEnvironmentId" -Headers $header -ContentType "application/json" -Body $mEnvironment
+            }
+            else
+            {
+                Write-Debug -Message "Creating the environment [$Name]."
+                Invoke-RestMethod -Method Post -Uri $environmentsUri -Headers $header -ContentType "application/json" -Body $mEnvironment
+            }
+        }     
+    }
+    End
+    {
+    }
+}
+
