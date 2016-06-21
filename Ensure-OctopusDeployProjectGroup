@@ -1,0 +1,67 @@
+function Ensure-OcotopusProjectGroup
+{
+    [CmdletBinding()]
+    [OutputType([int])]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [string]$Server,
+        [string]$ApiKey = "API-DSFSOOHFTSYAWCSZNA5ISONQJK",
+        [string]$Name,
+        [string]$Description,
+        [string]$RetentionPolicyId = "",
+        [string[]]$EnvironmentIds = @()
+
+    )
+
+    Begin
+    {
+        $header = @{ "X-Octopus-ApiKey" = $ApiKey}
+        $objectRestUri = "$Server/api/projectgroups"
+        $objectCollectionUri = "$Server/api/projectgroups/all"
+
+        $objObject = @{ "Name" = $Name;"Description" = $Description;"EnvironmentIds" = $EnvironmentIds;"RetentionPolicyId" = $RetentionPolicyId} | ConvertTo-Json
+    }
+    Process
+    {
+        #Get information to configure object's RestAPI
+        $objectRestSettings = Invoke-RestMethod -Method Get $objectRestUri -Headers $header
+
+        Write-Debug -Message "$($objectRestSettings.ItemType)s per page = $($objectRestSettings.ItemsPerPage), totoal number of $($objectRestSettings.ItemType)s = $($objectRestSettings.TotalResults)"
+        
+        #if there are not any objects just create the one requested
+        [bool]$objectExists = $false
+        [string]$octopusObjecttId = ""
+        
+        if($($objectRestSettings.TotalResults) -gt 0)
+        {
+
+            Write-Debug -Message "Checking current $($objectRestSettings.ItemType)s list, to see if [$Name] already exists."
+
+            $objectSet = ((Invoke-RestMethod -Method Get $objectCollectionUri -Headers $header) | Where {$_.Name -eq "$Name"})
+            if($objectSet -ne $null)
+            {
+                    $objectExists = $true
+                    $octopusObjecttId = $objectSet.Id
+                    Write-Debug "Found the environment [$Name] using the Id [$octopusObjecttId]."
+            }
+        }
+        if($objectExists -eq $true)
+        {
+                Write-Debug -Message "Updaing the $($objectRestSettings.ItemType) [$Name]."
+                Invoke-RestMethod -Method Put -Uri "$objectRestUri/$octopusObjecttId" -Headers $header -ContentType "application/json" -Body $objObject
+        }
+        else
+        {
+            Write-Debug -Message "Creating the $($objectRestSettings.ItemType) [$Name]."
+            Invoke-RestMethod -Method Post -Uri $objectRestUri -Headers $header -ContentType "application/json" -Body $objObject
+        }     
+    }
+    End
+    {
+    }
+}
+
