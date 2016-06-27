@@ -8,7 +8,6 @@ function Install-NServiceBusHost
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
         [string]$Name,
-        [string]$Version,
         [string]$HomeDirectory,
         [switch]$isProduction
         
@@ -20,10 +19,10 @@ function Install-NServiceBusHost
     }
     Process
     {
-        $thisService = Get-Service | Where { $_.Name -like "$Name%"}
+        $thisService = Get-Service | Where { $_.Name -eq "$Name"}
         foreach($service in $thisService)
         {
-            if(!($service.CanStop) -and ($service.status -ne "Stopped -or $service.status -ne "Stopping"))
+            if(!($service.CanStop) -and (($service.status -ne "Stopped") -and ($service.status -ne "Stopping")))
             {
               Write-Error "Service cannot be stopped."
             }
@@ -32,7 +31,10 @@ function Install-NServiceBusHost
               Sleep -Seconds 15
               $service.Stop()
             }
-            else
+            elseif(($service.status -ne "Stopped") -and ($service.status -ne "Stopping"))
+            {
+            }
+            elseif($service.CanStop)
             {
                 $service.Stop()
             }
@@ -44,7 +46,8 @@ function Install-NServiceBusHost
             while ($service.Status -ne "Stopped")
 
             [string]$servicePathName = Get-WmiObject -Class Win32_Service | Where {$_.Name -eq $service.Name} | select PathName
-            $servicePath = $servicePathName.Split(" ")
+            $servicePath = $servicePathName.Remove(0,12).Split("`"")
+            $servicePath
             [string]$literalServicePath = $servicePath[0]
             [string]$cmdUninstall = "$literalServicePath /uninstall /servicename:`"$Name`" NServiceBus.Production"
             
@@ -53,12 +56,7 @@ function Install-NServiceBusHost
                 $cmdUninstall = "$cmdUninstall $productionString"
             }
 
-            $oldHomeDir = Get-Item -Path $literalServicePath | Select DirectoryName
-            Push-Location -Path $oldHomeDir
-                Invoke-Expression -Command $cmdUninstall
-            Pop-Location
-            
-            $oldHomeDir = [System.String]::Empty
+            Invoke-Expression -Command $cmdUninstall
         }
 
 
@@ -73,6 +71,12 @@ function Install-NServiceBusHost
         Push-Location -Path $HomeDirectory
             Invoke-Expression -Command $cmdInstall
         Pop-Location
+
+        $newService = Get-Service | Where {$_.Name -eq "$Name" } 
+        if(($newService.Status -ne "Starting") -and ($newService -ne "Running"))
+        {
+            $newService.Start()
+        }
     }
     End
     {
