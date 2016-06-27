@@ -1,0 +1,5 @@
+[string]$pattern="(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<buildcounter>[0-9]+)"
+$reg = New-Object -TypeName System.Text.RegularExpressions.Regex -ArgumentList $pattern
+$branchBuildNumber = %teamcity.build.number%
+$RawVersionNumber = New-Object -TypeName System.Version -ArgumentList $reg.Match("$branchBuildNumber").Groups["major"].Value, $reg.Match("$branchBuildNumber").Groups["minor"].Value, 0, $reg.Match("$branchBuildNumber").Groups["buildcounter"].Value
+Write-Output "##teamcity[setParameter name='rawBuildNumber' value='$RawVersionNumber']"
