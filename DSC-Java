@@ -1,0 +1,35 @@
+Configuration Java
+{
+ param([string[]]$NodeName="localhost", [pscredential]$Credentials)
+
+    Node $NodeName
+    {
+
+        Script Java8u92Download
+        {
+            GetScript = {
+                $Result = (Test-Path -Path `"$($env:Windir)\Temp\jdk-8u92-windows-x64.exe`")
+                @{GetScript = $GetScript; 
+                    SetScript = $SetScript; 
+                    TestScript = $TestScript; 
+                    Result = $Result }
+            }
+            SetScript =  "(new-object System.Net.WebClient).Downloadfile(`"http://download.oracle.com/otn-pub/java/jdk/8u92-b14/jdk-8u92-windows-x64.exe`", `"$($env:Windir)\Temp\jdk-8u92-windows-x64.exe`")"
+            TestScript = "return (Test-Path -Path `"$($env:Windir)P\jdk-8u92-windows-x64.exe`")"
+        }
+
+        Package Java8u92
+        {
+            Arguments = "/qn"
+            Ensure ="Present"
+            Path  = "$($env:Windir)\Temp\jdk-8u92-windows-x64.exe"
+            Name = "Java SE Development Kit 8 Update 92 (64-bit)"
+            ProductId = "64A3A4F4-B792-11D6-A78A-00B0D0180920"
+            DependsOn = "[Script]Java8u92Download"
+        }
+    }
+
+}
+
+Java
+Start-DscConfiguration Java -ComputerName localhost -wait -force
