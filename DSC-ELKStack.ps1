@@ -35,6 +35,16 @@ output {
             TestScript = "return (Test-Path -Path `"$env:Temp\logstash-2.3.1.zip`")"
         }
 
+        Package Java8u92
+        {
+            Arguments = "/qn"
+            Ensure ="Present"
+            Path  = "$($env:Windir)\Temp\jdk-8u92-windows-x64.exe"
+            Name = "Java SE Development Kit 8 Update 92 (64-bit)"
+            ProductId = "64A3A4F4-B792-11D6-A78A-00B0D0180920"
+            #DependsOn = "[Script]Java8u92Download"
+        }
+
         Script NSSMDownload
         {
             GetScript = {
@@ -99,16 +109,6 @@ output {
             DependsOn = "[Script]ElasticSearchDownload"
         }
 
-        Archive KibanaSearch
-        {
-            Destination = "$elkroot\kibana"
-            Path = "$Env:TEMP\kibana-4.5.0-windows.zip"
-            Ensure = "Present"
-            Force = $true
-            DependsOn = "[Script]KibanaDownload"
-        }
-
-
         Archive UnzipLogStash
         {
             Destination = "$elkroot\logstash"
@@ -132,7 +132,7 @@ output {
             Name = "JAVA_HOME"
             Ensure = "Present"
             Path = $false
-            #DependsOn = "[Package]Java8u92"
+            DependsOn = "[Package]Java8u92"
             Value = "$env:ProgramFiles\Java\jdk1.8.0_92"
         }
 
@@ -141,39 +141,72 @@ output {
             Name = "JAVA_BIN"
             Ensure = "Present"
             Path = $false
-            #DependsOn = "[Package]Java8u92"
+            DependsOn = "[Package]Java8u92"
             Value = "$env:ProgramFiles\Java\jdk1.8.0_92\bin"
         }
-
 
         Script InstallElasticSearch
         {
             GetScript = {
-                $Result = (if((Get-Service | Where {$_.Name -eq "elasticsearch-service-x64"}) -ne $null){$tue}else{$false})
+                $Result = (if((Get-Service | Where {$_.Name -eq "elasticsearch-service-x64"}) -eq $null){return $tue}else{return $false})
                 @{GetScript = $GetScript; 
                     SetScript = $SetScript; 
                     TestScript = $TestScript; 
                     Result = $Result }
             }
-            SetScript =  "cd $elkroot\elasticsearch\elasticsearch-2.3.1\bin ; & service Install"
-            TestScript = "return (if((Get-Service | Where {$_.Name -eq `"elasticsearch-service-x64`"}) -ne $null){$tue}else{$false})"
+            SetScript =  {$env:JAVA_HOME = "$env:ProgramFiles\Java\jdk1.8.0_92"; "$elkroot\elasticsearch\elasticsearch-2.3.1\bin";Invoke-Expression -Command "cmd /c service.bat install"}
+            TestScript = {if((Get-Service | Where {$_.Name -eq "elasticsearch-service-x64"}) -eq $null){return $tue}else{return $false}}
+            DependsOn = "[Environment]JavaHome"
         }
 
-        Service ElasticSearchService
-        {
-            Name = "elasticsearch-service-x64"
+        #Service ElasticSearchService
+        #{
+        #    Name = "elasticsearch-service-x64"
+        #    #[ BuiltInAccount = [string] { LocalService | LocalSystem | NetworkService }  ]
+        #    #[ Credential = [PSCredential] ]
+        #    DependsOn = "[Script]InstallElasticSearch"
+        #    StartupType = "Automatic"
+        #    State = "Running"
+        #}
+
+        #Script InstallLogStash
+        #{
+        #    GetScript = {
+        #        $Result = (if((Get-Service | Where {$_.Name -eq "elasticsearch-service-x64"}) -ne $null){$tue}else{$false})
+        #        @{GetScript = $GetScript; 
+        #            SetScript = $SetScript; 
+        #            TestScript = $TestScript; 
+        #            Result = $Result }
+        #    }
+        #    SetScript =  "cd $elkroot\logstash\;"
+        #    TestScript = "return (if((Get-Service | Where {$_.Name -eq `"Logstash`"}) -ne $null){$tue}else{$false})"
+        #    DependsOn = '[Service]ElasticSearchService','[Archive]UnzipLogStash'
+        #}
+
+        #Service LogStashService
+        #{
+        #    Name = "Logstash"
             #[ BuiltInAccount = [string] { LocalService | LocalSystem | NetworkService }  ]
             #[ Credential = [PSCredential] ]
-            DependsOn = "[Script]InstallElasticSearch"
-            StartupType = "Automatic"
-            State = "Running"
-        }
+        #    DependsOn = "[Script]InstallLogStash"
+        #    StartupType = "Automatic"
+        #    State = "Running"
+        #}
 
         WindowsFeature IIS
         {
             Ensure = "Present"
-            Name = Web-Server
+            Name = "Web-Server"
         }
+
+        #Archive UnzipKibana
+        #{
+        #    Destination = "$elkroot\kibana"
+        #    Path = "$Env:TEMP\kibana-4.5.0-windows.zip"
+        #    Ensure = "Present"
+        #    Force = $true
+        #    DependsOn = "[Script]KibanaDownload"
+        #}
         
    } 
 }
