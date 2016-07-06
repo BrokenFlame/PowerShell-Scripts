@@ -1,0 +1,48 @@
+Configuration BaseConfiguration
+{
+ param([string[]]$NodeName=“localhost“, [pscredential]$Credentials)  
+    Node $NodeName
+    {
+        Environment EnvEnvironment
+        {
+            Name = "Environment"
+            Ensure = "Present"
+            Path = $false
+            Value = "Production"
+        }
+
+        Environment EnvRole
+        {
+            Name = "Role"
+            Ensure = "Present"
+            Path = $false
+            Value = "WebServer"
+        }
+
+        Script PuppetAgentDownload
+        {
+            GetScript = {
+                $Result = (Test-Path -Path `"$Env:TEMP\puppet-agent-1.5.2-x64.msi`")
+                @{GetScript = $GetScript; 
+                    SetScript = $SetScript; 
+                    TestScript = $TestScript; 
+                    Result = $Result }
+            }
+            SetScript =  "(new-object System.Net.WebClient).Downloadfile(`"http://pm.puppetlabs.com/puppet-agent/2016.2.0/1.5.2/repos/windows/puppet-agent-1.5.2-x64.msi`", `"$Env:TEMP\puppet-agent-1.5.2-x64.msi`")"
+            TestScript = "return (Test-Path -Path `"$Env:TEMP\puppet-agent-1.5.2-x64.msi`")"
+        }
+
+        Package PuppetAgent
+        {
+            Arguments = "/qn /norestart"
+            Ensure = "Present"
+            Path  = "$Env:TEMP\puppet-agent-1.5.2-x64.msi"
+            Name = "Puppet Agent (64-bit)"
+            ProductId = “220D93A0-9322-48FE-9544-7E736C65CA47"
+            DependsOn = "[Script]PuppetAgentDownload"
+        }
+    }
+}
+
+BaseConfiguration
+Start-DscConfiguration BaseConfiguration -ComputerName localhost -Wait
