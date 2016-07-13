@@ -1,0 +1,83 @@
+ Configuration IIS
+{
+ param([string[]]$NodeName=“localhost“, [pscredential]$Credentials)
+
+   
+    Node $NodeName
+    {
+        WindowsFeature IIS
+        {
+            Name = "Web-Server"
+            Ensure ="Present"
+        }
+
+        WindowsFeature ASP
+        {
+            Name = "Web-Asp-Net45"
+            Ensure = "Present"
+        }
+
+        WindowsFeature DynamicCompression
+        {
+            Name = "Web-Dyn-Compression"
+            Ensure = "Present"
+        }
+
+        WindowsFeature WebManConsole
+        {
+            Name = "Web-Mgmt-Console"
+            Ensure = "Present"
+        }
+
+        WindowsFeature WebCustomLogging                                                                
+        {
+            Ensure = "Present"
+            Name = "Web-Custom-Logging"
+        }
+
+        WindowsFeature WebHttpLogging
+        {
+            Ensure = "Present"
+            Name = "Web-Http-Logging"
+        }
+
+        WindowsFeature WebRedirect
+        {
+            Ensure = "Present"
+            Name = "Web-Http-Redirect"
+        }
+
+        WindowsFeature IisWindowsAuth
+        {
+            Ensure = "Present"
+            Name = "Web-Windows-Auth"
+        }
+
+        WindowsFeature WebSockets
+        {
+            Ensure = "Present"
+            Name = "Web-WebSockets"
+        }
+
+        WindowsFeature WebBasicAuth
+        {
+            Name = "Web-Basic-Auth"
+            Ensure = "Present"
+        }
+
+        WindowsFeature WebUrlAuth
+        {
+            Name = "Web-Url-Auth"
+            Ensure = "Present"
+        }
+
+        WindowsFeature WebIpSec
+        {
+            Name = "Web-IP-Security"
+            Ensure = "Present"
+        }
+    }
+}                                                                                                                        
+
+IIS
+Start-DscConfiguration IIS -ComputerName localhost -Wait -Force
