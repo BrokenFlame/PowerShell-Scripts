@@ -97,7 +97,7 @@ function Set-RabbitMQUserPermission
     }
     Process
     {
-        $user = Invoke-RestMethod -Method Get -Uri $uri -Credential $credential | Where { $_.users -eq "$RabbitMQUser"  }
+        $user = Invoke-RestMethod -Method Get -Uri $uri -Credential $credential | Where { $_.name -eq "$RabbitMQUser"  }
 
         If($users -ne $null)
         {
