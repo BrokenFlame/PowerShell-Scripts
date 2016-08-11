@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
    Set-DatabaseRecoveryModel sets the Database Recovery Model for Microsoft SQL Server Databases.
@@ -61,7 +60,7 @@ function Set-DatabaseRecoveryModel
             $currentRecoveryModel = $sqlServer.Databases["$DatabaseName"].RecoveryModel
             if($currentRecoveryModel -eq $newRecoveryModel)
             {
-                Write-Verbose -Message "The recovery model for the database [$Database] is $($currentRecoveryModel.ToString())."
+                Write-Verbose -Message "The recovery model for the database [$DatabaseName] is $($currentRecoveryModel.ToString())."
             }
             else
             { 
@@ -79,7 +78,9 @@ function Set-DatabaseRecoveryModel
     End
     {
         $sqlServer = $null
-        $recoveryModel = $null
+        $currentRecoveryModel = $null
+        $newRecoveryModel = $null
+        $DatabaseName = $null
         return $errorCode
     }
 }
