@@ -1,0 +1,54 @@
+<#
+.Synopsis
+   Produces a full backup of a MS SQL Database to the local disk
+.DESCRIPTION
+   Produces a full backup of a MS SQL Database to the local disk
+.EXAMPLE
+   Backup-MSSQLDatabase -Instance (local) -DatabaseName MyDatabase -BackupFile C:\Windows\Temp\MyDatabase.bak
+#>
+function Backup-MSSQLDatabase
+{
+    [CmdletBinding()]
+    [OutputType([int])]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [string]$Instance,
+        [string]$DatabaseName,
+        [string]$BackupFile
+    )
+
+    Begin
+    {
+        [void][System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO")
+        [void][System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SmoExtended")
+        If(Test-Path -Path $BackupFile)
+        {
+            Get-Item -Path $BackupFile | Remove-Item -Force
+        }
+    }
+    Process
+    {
+        $svr = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList "$Instance";
+        $database = $svr.Databases["$DatabaseName"]
+        $dbname = $database.Name
+        $dbbk = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
+        $dbbk.Action = 'Database'
+        $dbbk.BackupSetDescription = "Full backup of " + $DatabaseName + " " + $(Get-Date)
+        $dbbk.BackupSetName = $dbname + " Backup"
+        $dbbk.Database = $dbname
+        $dbbk.MediaDescription = "Disk"
+        $dbbk.Devices.AddDevice($BackupFile, 'File')
+        $dbbk.SqlBackup($svr)
+    }
+    End
+    {
+    }
+}
+
+Backup-MSSQLDatabase -Instance "(local)" -DatabaseName dbname -BackupFile C:\Windows\Temp\dbname.bak
+Import-Module "C:\Program Files (x86)\AWS Tools\PowerShell\AWSPowerShell\AWSPowerShell.psd1"
+Write-S3Object -BucketName bucketname -File filename.bak -Key folder/filename.bak -CannedACLName Private
