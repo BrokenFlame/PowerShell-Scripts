@@ -4,7 +4,7 @@
        <rule name="RedirectToWWW" stopProcessing="true">
           <match url="(.*)" ignoreCase="true" />
           <conditions>
-            <add input="{HTTP_X_FORWARDED_PROTO}" pattern="https" negate="true" />
+            <add input="{HTTP_X_FORWARDED_PROTO}" pattern="^https$" negate="true" />
             <add input="{REMOTE_HOST}" pattern="localhost" negate="true" />
             <add input="{REMOTE_ADDR}" pattern="127.0.0.1" negate="true" />
             <add input="{HTTP_HOST}" pattern="localhost" negate="true" />
