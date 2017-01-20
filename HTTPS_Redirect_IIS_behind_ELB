@@ -1,7 +1,9 @@
+$webConfigPath = <Your web.config path here>
+$configPath = (Get-Item -Path $webConfigPath).FullName
 [xml]$urlRewriteSection = @"
 <rewrite>
     <rules>
-       <rule name="RedirectToWWW" stopProcessing="true">
+       <rule name="RedirectToHttps" stopProcessing="true">
           <match url="(.*)" ignoreCase="true" />
           <conditions>
             <add input="{HTTP_X_FORWARDED_PROTO}" pattern="^https$" ignoreCase="true" negate="true" />
@@ -15,7 +17,29 @@
 </rewrite>
 "@
 
-$configPath = (Get-Item -Path .\web.config).FullName
-$xml = [xml](type $configPath)
-$xml.configuration."system.WebServer".AppendChild($xml.ImportNode($urlRewriteSection.rewrite, $true))
+
+Write-Verbose "Ammending $configPath"
+[xml]$xml = [xml](Get-Content -Path $configPath)
+
+Write-Verbose "Current Config:"
+$sw = New-Object System.Io.Stringwriter
+$writer=New-Object System.Xml.XmlTextWriter($sw)
+$writer.Formatting = [System.Xml.Formatting]::Indented
+$xml.WriteContentTo($writer)
+$sw.ToString()
+
+
+if($xml.SelectSingleNode("//configuration//system.webServer") -eq $null)
+{
+    [System.Xml.XmlElement]$missingElement = $xml.CreateElement("system.webServer")
+    $xml.SelectSingleNode("//configuration").AppendChild($missingElement)
+}
+$xml.configuration["system.webServer"].AppendChild($xml.ImportNode($urlRewriteSection.rewrite, $true))
 $xml.Save($configPath)
+
+Write-Verbose "New web.config:"
+$sw = New-Object System.Io.Stringwriter
+$writer=New-Object System.Xml.XmlTextWriter($sw)
+$writer.Formatting = [System.Xml.Formatting]::Indented
+$xml.WriteContentTo($writer)
+$sw.ToString()
