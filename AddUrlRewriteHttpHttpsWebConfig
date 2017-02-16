@@ -1,0 +1,21 @@
+[xml]$urlRewriteSection = @"
+<rewrite>
+    <rules>
+       <rule name="RedirectToWWW" stopProcessing="true">
+          <match url="(.*)" ignoreCase="true" />
+          <conditions>
+            <add input="{HTTP_X_FORWARDED_PROTO}" pattern="https" negate="true" />
+            <add input="{REMOTE_HOST}" pattern="localhost" negate="true" />
+            <add input="{REMOTE_ADDR}" pattern="127.0.0.1" negate="true" />
+            <add input="{HTTP_HOST}" pattern="localhost" negate="true" />
+          </conditions>
+          <action type="Redirect" url="https://{HTTP_HOST}/{R:1}" redirectType="Permanent" />
+        </rule>
+    </rules>
+</rewrite>
+"@
+
+$configPath = (Get-Item -Path C:\folder\something.xml).FullName
+$xml = [xml](type $configPath)
+$xml.configuration."system.WebServer".AppendChild($xml.ImportNode($urlRewriteSection.rewrite, $true))
+$xml.Save($configPath)
