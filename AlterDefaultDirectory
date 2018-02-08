@@ -1,0 +1,12 @@
+//DefaultLog
+//DefaultData
+//BackupDirectory
+
+
+[string]$DirectoryType = "BackupDirectory"
+[string]$Path = "L:\Backup"
+
+[void][System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO")
+$server = New-Object Microsoft.SqlServer.Management.Smo.Server($env:ComputerName)
+$server.Properties[$DirectoryType].Value = $Path
+$server.Alter()
