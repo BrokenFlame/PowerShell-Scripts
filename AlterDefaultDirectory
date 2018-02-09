@@ -1,10 +1,10 @@
-//DefaultLog
-//DefaultData
+//DefaultFile
+//DefaultLogs
 //BackupDirectory
 
 
 [string]$DirectoryType = "BackupDirectory"
-[string]$Path = "L:\Backup"
+[string]$Path = "X:\Backups"
 
 [void][System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO")
 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($env:ComputerName)
