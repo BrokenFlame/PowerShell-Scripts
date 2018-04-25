@@ -34,7 +34,7 @@ function Set-MsSqlServerLoginMode
             {
                 $svr.Settings.LoginMode = [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Normal
             }
-            if($Mode -eq "Mixed")
+            elseif($Mode -eq "Mixed")
             {
                 $svr.Settings.LoginMode = [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed
             }
