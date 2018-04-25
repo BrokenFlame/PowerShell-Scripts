@@ -1,3 +1,13 @@
+  <#
+.Synopsis
+   Sets the Microsoft SQL Server Login Audit Level for SQL Server 2012 and above.
+.DESCRIPTION
+   Sets the Microsoft SQL Server Login Audit Level for SQL Server 2012 and above. Please note that the SQL Server SMO must be installed on the computer executing this command.
+.EXAMPLE
+   Set-MsSqlServerLoginMode -Instance "(local)\MSSQLSERVER" -Mode Mixed
+.EXAMPLE
+   "(local)\MSSQLSERVER" | Set-MsSqlServerLoginMode -Mode Mixed
+#> 
  function Set-MSSQLServerAuditLevel
 {
     [CmdletBinding()]
