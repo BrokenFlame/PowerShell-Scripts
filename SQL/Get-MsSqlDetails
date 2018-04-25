@@ -1,0 +1,24 @@
+ function Get-MsSqlDetails([string]$instance = "(local)")
+{
+    [void][System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") 
+    [void][System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SmoExtended") 
+    $svr = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList "$instance";
+    $ServerDetails = New-Object -TypeName System.Management.Automation.PSObject
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Default Backup Directory" -Value $($svr.Properties["BackupDirectory"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL is in Single User Mode" -Value $($svr.Properties["IsSingleUser"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL is Clustered" -Value $($svr.Properties["IsClustered"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Server Type" -Value $($svr.Properties["ServerType"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Edition" -Value $($svr.Properties["Edition"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Login Mode" -Value $($svr.Properties["LoginMode"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Error Log Directory" -Value $($svr.Properties["ErrorLogPath"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Default Database Log Directory" -Value $($svr.Properties["DefaultLog"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Default Database File Directory" -Value $($svr.Properties["DefaultFile"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Audit Level" -Value $($svr.Properties["AuditLevel"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Version" -Value $($svr.Properties["VersionString"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Default Collation" -Value $($svr.Properties["Collation"].Value)
+    $ServerDetails | Add-Member -MemberType NoteProperty -Name "MSSQL Product" -Value $($svr.Properties["Product"].Value)
+
+    $ServerDetails
+    $ServerDetails = $null
+}
+ 
