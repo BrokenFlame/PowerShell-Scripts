@@ -1,0 +1,38 @@
+[string]$aws_region = ConvertFrom-Json (Invoke-WebRequest -Uri http://169.254.169.254/latest/dynamic/instance-identity/document -UseBasicParsing).Content).region
+$instance_id = (Invoke-RestMethod -Uri http://169.254.169.254/latest/dynamic/instance-identity/document).instanceId
+$tags = Get-EC2Tag -Region $aws_region | Where {$_.ResourceId -eq $instance_id}
+
+
+$tanium_key = "HKLM:\SOFTWARE\Wow6432Node\Tanium\Tanium Client\Sensor Data\Tags"
+if (!(Test-Path -Path $tanium_key))
+{
+    New-Item -Path $tanium_key
+}
+Set-ItemProperty -Path $tanium_key -Name "TIO-HS" -PropertyType String -Value ""
+Set-ItemProperty -Path $tanium_key -Name "Environment" -PropertyType String -Value "${$tags.Environment}"
+Set-ItemProperty -Path $tanium_key -Name "Product" -PropertyType String -Value "${tags.Product}"
+
+$service = Get-Service | Where {$_.Name -eq "Tanium Client"}
+If($service -and $service.CanStop)
+{
+    #Restart Tanium
+    $service.Stop()
+}
+
+
+
+
+
+
+#Commands to install tanium 
+$DirectConnectCommand = "SetupClient.exe /ServerAddress=exta-ustan-prd.prod.occtools.tio.systems,extb-ustan-prd.prod.occtools.tio.systems /ServerPort=17486 /S /KeyPath=Path\tanium.pub"
+$UsCommand = "SetupClient.exe /ServerAddress=elwtanappp001.science.regn.net,elwtanappp002.science.regn.net /ServerPort=17486 /S /KeyPath=Path\tanium.pub"
+$RestOfWorld = "SetupClient.exe /ServerAddress=exta-tan-prd.prod.occtools.tio.systems,extb-tan-prd.prod.occtools.tio.systems /ServerPort=17486 /S /KeyPath=Path\tanium.pub"
+if($aws_region.StartsWith("us"))
+{
+    Invoke-Expression -Command $UsCommand
+}
+else
+{
+    Invoke-Expression -Command $RestOfWorld
+}
