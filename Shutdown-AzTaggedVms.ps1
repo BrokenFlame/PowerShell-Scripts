@@ -1,3 +1,5 @@
+
+
 workflow Shutdown-AzTaggedVMs
 {
     #The name of the Automation Credential Asset this runbook will use to authenticate to Azure.
@@ -28,12 +30,14 @@ workflow Shutdown-AzTaggedVMs
     }
 
 
+    InlineScript{
+
     #This is where we actually do the task
 
     $VMsToShutdown = @()
     try 
     {
-        $VMs = Get-AzVM
+        $VMs = Get-AzureVM
         foreach($vm in $VMs){
             [System.Collections.Hashtable]$tags = $vm.Tags
             [ref]$parseResult = $false
@@ -56,8 +60,11 @@ workflow Shutdown-AzTaggedVMs
     {
         foreach($vm in $VMsToShutdown)
         {
-            Stop-AzVM -ResourceGroupName $vm.ResourceGroupName -Name $vm.Name -StayProvisioned -Force -ErrorAction Continue
+            Stop-AzureVM -ResourceGroupName $vm.ResourceGroupName -Name $vm.Name -StayProvisioned -Force -ErrorAction Continue
             Write-Output "$($vm.Name) has been sent a shutdown signal."
         }
     }
+    }
 }
+
+
