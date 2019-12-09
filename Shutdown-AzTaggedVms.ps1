@@ -2,17 +2,29 @@ workflow Shutdown-AzTaggedVMs
 {
     #The name of the Automation Credential Asset this runbook will use to authenticate to Azure.
     $CredentialAssetName = 'DefaultAzureCredential'
+    if($CredentialAssetName -eq $null)
+    {
+        Write-Error "Could not obtain CredentialAssetName, to perform the job."
+    }
 
     #Get the credential with the above name from the Automation Asset store
     $Cred = Get-AutomationPSCredential -Name $CredentialAssetName
     if(!$Cred) {
         Throw "Could not find an Automation Credential Asset named '${CredentialAssetName}'. Make sure you have created one in this Automation Account."
     }
+    else
+    {
+        Write-Output "Aquired PSCrentials."
+    }
 
     #Connect to your Azure Account
     $Account = Add-AzureAccount -Credential $Cred
     if(!$Account) {
         Throw "Could not authenticate to Azure using the credential asset '${CredentialAssetName}'. Make sure the user name and password are correct."
+    }
+    else
+    {
+        Write-Output "Connected to Azure Account."
     }
 
 
